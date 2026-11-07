@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+httpx
+pydantic-settings
+sqlmodel
+anthropic
+python-multipart
+pytest
+respx
