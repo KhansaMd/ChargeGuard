@@ -1,0 +1,160 @@
+
+.transactions-page {
+  min-width: 0;
+}
+
+.transactions-description {
+  color: #8490a2;
+  font-size: 13px;
+  margin-top: 7px;
+}
+
+.transaction-data-mode {
+  background: #fff5df;
+  color: #986a1c;
+  padding: 9px 13px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.transaction-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 25px 0;
+}
+
+.transaction-summary-card {
+  background: white;
+  border: 1px solid #edf0f5;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.transaction-summary-card span {
+  display: block;
+  color: #8490a2;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.transaction-summary-card strong {
+  color: #202b3c;
+  font-size: 25px;
+}
+
+.transactions-table-card {
+  padding: 22px;
+  min-width: 0;
+}
+
+.transactions-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.transactions-toolbar h2 {
+  font-size: 17px;
+  margin-bottom: 6px;
+}
+
+.transactions-toolbar p {
+  color: #8490a2;
+  font-size: 12px;
+}
+
+.transactions-toolbar input {
+  min-width: 220px;
+  border: 1px solid #e5e9f0;
+  background: white;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.transactions-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.transactions-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.transactions-table th {
+  color: #8490a2;
+  background: #f8f9fc;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 14px 12px;
+}
+
+.transactions-table td {
+  color: #586579;
+  font-size: 12px;
+  padding: 16px 12px;
+  border-bottom: 1px solid #f0f2f6;
+}
+
+.transactions-table tbody tr:hover {
+  background: #fafbfe;
+}
+
+.transactions-table .transaction-id {
+  color: #315bce;
+  font-weight: 700;
+}
+
+.transactions-table .transaction-amount {
+  color: #293548;
+  font-weight: 600;
+}
+
+.transaction-type {
+  display: inline-block;
+  padding: 6px 9px;
+  border-radius: 15px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.transaction-type.synthetic {
+  background: #fff5df;
+  color: #986a1c;
+}
+
+.transaction-type.verified {
+  background: #e8f7ef;
+  color: #16845b;
+}
+
+.transactions-footnote,
+.transactions-empty {
+  color: #8490a2;
+  font-size: 12px;
+  margin-top: 16px;
+}
+
+@media (max-width: 700px) {
+  .transaction-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .transactions-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .transactions-toolbar input {
+    width: 100%;
+  }
+}
