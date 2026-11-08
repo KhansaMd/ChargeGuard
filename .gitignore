@@ -223,3 +223,6 @@ __marimo__/
 .venv/
 *.db
 __pycache__/
+# Postman local files (may contain keys)
+postman/
+.postman/

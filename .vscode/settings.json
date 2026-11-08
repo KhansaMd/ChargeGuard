@@ -1,3 +1,4 @@
 {
-  "python.terminal.useEnvFile": true
+  "terminal.integrated.cwd": "${workspaceFolder}/backend",
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/bin/python"
 }
