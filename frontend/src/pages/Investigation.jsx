@@ -4,44 +4,6 @@ import { Link, useParams } from 'react-router-dom';
 import { api } from '../services/api';
 import './Investigation.css';
 
-const demoDetail = {
-  dispute: {
-    id: 'DP-10241',
-    transaction_id: 'TXN-58392',
-    reason: 'Item not received',
-    status: 'Under review',
-    stage: 'Evidence review',
-    amount: 149,
-    currency: 'USD',
-    due_date: '2026-11-12',
-    created_at: '2026-11-04',
-  },
-  evidence_check: {
-    checklist: [
-      { type: 'Order confirmation', status: 'available', evidence_id: 'EV-001' },
-      { type: 'Payment record', status: 'available', evidence_id: 'EV-002' },
-      { type: 'Shipping confirmation', status: 'missing', evidence_id: null },
-      { type: 'Delivery confirmation', status: 'missing', evidence_id: null },
-    ],
-    contradictions: [],
-    evidence: [
-      {
-        id: 'EV-001',
-        type: 'Order confirmation',
-        source: 'Merchant order record',
-        value: 'Order #ORD-58392 — $149.00 USD',
-      },
-      {
-        id: 'EV-002',
-        type: 'Payment record',
-        source: 'Sandbox transaction',
-        value: 'Payment TXN-58392 — Completed',
-      },
-    ],
-  },
-  report: null,
-};
-
 function formatDate(value) {
   if (!value) return 'Not provided';
 
@@ -60,7 +22,6 @@ function Investigation() {
   const { id } = useParams();
 
   const [detail, setDetail] = useState(null);
-  const [demoMode, setDemoMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
@@ -97,21 +58,15 @@ function Investigation() {
         if (!active) return;
 
         setDetail(result);
-        setDemoMode(false);
         setDraft(result?.report?.data?.response_draft || '');
-      } catch {
+      } catch (err) {
         if (!active) return;
 
-        setDetail({
-          ...demoDetail,
-          dispute: {
-            ...demoDetail.dispute,
-            id,
-          },
-        });
-
-        setDemoMode(true);
-        setDraft('');
+        setDetail(null);
+        setError(
+          err.message ||
+          'Unable to load dispute. Check your backend connection.'
+        );
       } finally {
         if (active) setLoading(false);
       }
@@ -126,27 +81,26 @@ function Investigation() {
 
   // Run AI investigation
   async function runInvestigation() {
-    if (demoMode) {
-      setNotice(
-        'Demo mode: connect the backend to run a real AI investigation.'
-      );
-      return;
-    }
-
     setActionLoading(true);
     setError('');
     setNotice('');
 
     try {
-      const result = await api.investigate(id);
+      // Run the AI investigation.
+      await api.investigate(id);
 
-      setDetail((previous) => ({
-        ...previous,
-        report: result,
-      }));
+      // Fetch the saved report from the backend.
+      // The investigation endpoint may return an empty object,
+      // so we retrieve the updated dispute separately.
+      const refreshed = await api.getDispute(id);
 
-      setDraft(result?.data?.response_draft || '');
-      setNotice('Investigation completed.');
+      setDetail(refreshed);
+      setDraft(
+        refreshed?.report?.data?.response_draft || ''
+      );
+      setSelectedFinding(null);
+
+      setNotice('Investigation completed successfully.');
     } catch (err) {
       setError(err.message || 'Investigation failed.');
     } finally {
@@ -181,7 +135,9 @@ function Investigation() {
 
       setNotice('Response draft generated.');
     } catch (err) {
-      setError(err.message || 'Could not generate the response draft.');
+      setError(
+        err.message || 'Could not generate the response draft.'
+      );
     } finally {
       setActionLoading(false);
     }
@@ -209,7 +165,7 @@ function Investigation() {
 
       setNotice(
         result?.approved
-          ? 'Report approved.'
+          ? 'Report approved successfully.'
           : 'Approval request sent. Check the backend response.'
       );
     } catch (err) {
@@ -219,40 +175,13 @@ function Investigation() {
     }
   }
 
-  // Submit approved evidence
-  async function submitEvidence() {
-    if (!report?.approved) return;
-
-    const confirmed = window.confirm(
-      'Submit the approved evidence to PayPal?'
-    );
-
-    if (!confirmed) return;
-
-    setActionLoading(true);
-    setError('');
-    setNotice('');
-
-    try {
-      const result = await api.submitEvidence(id);
-
-      setNotice(
-        result?.submitted
-          ? 'Evidence submission completed.'
-          : 'The backend did not confirm submission.'
-      );
-    } catch (err) {
-      setError(err.message || 'Evidence submission failed.');
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
   // Loading state
   if (loading) {
     return (
       <main className="main-content">
-        <p className="investigation-message">Loading dispute...</p>
+        <p className="investigation-message">
+          Loading dispute...
+        </p>
       </main>
     );
   }
@@ -264,6 +193,7 @@ function Investigation() {
         <Link to="/disputes" className="back-link">
           ← Back to disputes
         </Link>
+
         <p className="investigation-error">{error}</p>
       </main>
     );
@@ -292,17 +222,21 @@ function Investigation() {
           </p>
         </div>
 
-        <span className={`data-mode ${demoMode ? 'demo' : 'live'}`}>
-          {demoMode ? 'Demo data' : 'Backend connected'}
+        <span className="data-mode live">
+          Backend connected
         </span>
       </div>
 
       {error && (
-        <div className="investigation-alert error">{error}</div>
+        <div className="investigation-alert error">
+          {error}
+        </div>
       )}
 
       {notice && (
-        <div className="investigation-alert notice">{notice}</div>
+        <div className="investigation-alert notice">
+          {notice}
+        </div>
       )}
 
       {/* Dispute overview */}
@@ -321,7 +255,9 @@ function Investigation() {
         <div className="overview-grid">
           <div>
             <span>Dispute reason</span>
-            <strong>{dispute.reason || 'Not provided'}</strong>
+            <strong>
+              {dispute.reason || 'Not provided'}
+            </strong>
           </div>
 
           <div>
@@ -340,12 +276,16 @@ function Investigation() {
 
           <div>
             <span>Current stage</span>
-            <strong>{dispute.stage || 'Not provided'}</strong>
+            <strong>
+              {dispute.stage || 'Not provided'}
+            </strong>
           </div>
 
           <div>
             <span>Date created</span>
-            <strong>{formatDate(dispute.created_at)}</strong>
+            <strong>
+              {formatDate(dispute.created_at)}
+            </strong>
           </div>
 
           <div>
@@ -368,17 +308,11 @@ function Investigation() {
           <button
             className="primary-button"
             onClick={runInvestigation}
-            disabled={actionLoading || demoMode}
+            disabled={actionLoading}
           >
             {actionLoading ? 'Working...' : 'Run investigation'}
           </button>
         </div>
-
-        {demoMode && (
-          <p className="demo-note">
-            Demo mode: AI analysis becomes available when the backend is connected.
-          </p>
-        )}
 
         {findings.length > 0 ? (
           <div className="findings-list">
@@ -390,7 +324,9 @@ function Investigation() {
                 }`}
                 onClick={() => setSelectedFinding(index)}
               >
-                <span className="finding-number">{index + 1}</span>
+                <span className="finding-number">
+                  {index + 1}
+                </span>
 
                 <span className="finding-content">
                   <strong>{finding.statement}</strong>
@@ -411,9 +347,11 @@ function Investigation() {
         ) : (
           <div className="empty-state">
             <span className="empty-icon">✦</span>
+
             <strong>No investigation findings yet</strong>
+
             <p>
-              Run an investigation when the backend is connected.
+              Run an investigation to generate AI findings.
             </p>
           </div>
         )}
@@ -458,11 +396,15 @@ function Investigation() {
                   <strong>{item.type}</strong>
 
                   {item.evidence_id && (
-                    <small>Evidence ID: {item.evidence_id}</small>
+                    <small>
+                      Evidence ID: {item.evidence_id}
+                    </small>
                   )}
                 </div>
 
-                <span className={`evidence-status ${item.status}`}>
+                <span
+                  className={`evidence-status ${item.status}`}
+                >
                   {item.status}
                 </span>
               </div>
@@ -480,7 +422,9 @@ function Investigation() {
 
             {contradictions.map((item, index) => (
               <div key={index}>
-                <strong>{item.issue || item.statement}</strong>
+                <strong>
+                  {item.issue || item.statement}
+                </strong>
 
                 {item.evidence_ids?.length > 0 && (
                   <small>
@@ -509,6 +453,13 @@ function Investigation() {
                 selectedFinding !== null &&
                 findings[selectedFinding]?.source_ids?.includes(item.id);
 
+              const checklistItem = checklist.find(
+                (entry) => entry.evidence_id === item.id
+              );
+
+              const evidenceStatus =
+                checklistItem?.status || 'unclassified';
+
               return (
                 <div
                   key={item.id}
@@ -518,8 +469,15 @@ function Investigation() {
                 >
                   <div className="evidence-item-heading">
                     <strong>{item.type}</strong>
-                    <span>{item.id}</span>
+
+                    <span
+                      className={`evidence-status ${evidenceStatus}`}
+                    >
+                      {evidenceStatus}
+                    </span>
                   </div>
+
+                  <small>Evidence ID: {item.id}</small>
 
                   <p>{item.value || 'No value provided'}</p>
 
@@ -562,7 +520,7 @@ function Investigation() {
           <button
             className="secondary-button"
             onClick={generateDraft}
-            disabled={actionLoading || !report?.id || demoMode}
+            disabled={actionLoading || !report?.id}
           >
             Generate draft
           </button>
@@ -597,7 +555,6 @@ function Investigation() {
             onClick={approveReport}
             disabled={
               actionLoading ||
-              demoMode ||
               !report?.id ||
               !draft.trim() ||
               report?.approved
@@ -608,17 +565,14 @@ function Investigation() {
 
           <button
             className="submit-button"
-            onClick={submitEvidence}
-            disabled={
-              actionLoading ||
-              demoMode ||
-              !report?.approved
-            }
+            disabled={true}
+            title="PayPal submission is disabled during development"
           >
-            Submit evidence
+            Submission disabled during testing
           </button>
         </div>
       </section>
+
     </main>
   );
 }
