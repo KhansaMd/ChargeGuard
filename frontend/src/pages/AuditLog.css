@@ -1,0 +1,159 @@
+
+.audit-page {
+  min-width: 0;
+}
+
+.audit-description {
+  color: #7b8497;
+  font-size: 13px;
+  margin-top: 7px;
+}
+
+.audit-status {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #f1f3f8;
+  color: #68738a;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.audit-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin: 26px 0;
+}
+
+.audit-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 21px;
+  background: #fff;
+  border: 1px solid #e9ebf1;
+  border-radius: 12px;
+}
+
+.audit-summary span {
+  color: #7b8497;
+  font-size: 12px;
+}
+
+.audit-summary strong {
+  color: #202a3c;
+  font-size: 28px;
+}
+
+.audit-content {
+  background: #fff;
+  border: 1px solid #e9ebf1;
+  border-radius: 12px;
+  padding: 22px;
+}
+
+.audit-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.audit-heading h2 {
+  color: #202a3c;
+  font-size: 17px;
+  margin: 0 0 6px;
+}
+
+.audit-heading p {
+  color: #929bad;
+  font-size: 12px;
+  margin: 0;
+}
+
+.audit-search {
+  width: 280px;
+  max-width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e8ef;
+  border-radius: 8px;
+  font-size: 12px;
+  outline: none;
+}
+
+.audit-search:focus {
+  border-color: #8b9bd0;
+}
+
+.audit-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.audit-table th {
+  padding: 13px 12px;
+  background: #f8f9fc;
+  color: #8992a4;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.audit-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid #f0f1f5;
+  color: #566176;
+  font-size: 12px;
+}
+
+.audit-id {
+  color: #435a9a !important;
+  font-weight: 700;
+}
+
+.audit-action {
+  color: #303d55;
+  font-weight: 600;
+}
+
+.audit-detail {
+  white-space: normal;
+  min-width: 220px;
+}
+
+.audit-empty {
+  padding: 40px 15px;
+  color: #929bad;
+  text-align: center;
+  font-size: 13px;
+}
+
+.audit-demo-note {
+  color: #929bad;
+  font-size: 11px;
+  line-height: 1.6;
+  margin-top: 18px;
+}
+
+@media (max-width: 700px) {
+  .audit-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .audit-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .audit-search {
+    width: 100%;
+  }
+}
