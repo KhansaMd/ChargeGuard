@@ -68,6 +68,7 @@ function formatDate(value) {
   return date.toLocaleDateString('en-US', {
     day: 'numeric',
     month: 'short',
+
     year: 'numeric',
   });
 }
@@ -119,9 +120,13 @@ function Investigation() {
 
         if (!active) return;
 
-        setDetail(result);
+        setDetail({
+          ...result,
+          report: null,
+        });
+
         setDemoMode(false);
-        setDraft(result?.report?.data?.response_draft || '');
+        setDraft('');
       } catch {
         if (!active) return;
 
@@ -165,12 +170,19 @@ function Investigation() {
     try {
       const result = await api.investigate(id);
 
+      console.log('AI INVESTIGATION RESPONSE:', result);
+
       setDetail((previous) => ({
         ...previous,
         report: result,
       }));
 
-      setDraft(result?.data?.response_draft || '');
+      setDraft(
+        result?.report?.data?.response_draft ||
+        result?.data?.response_draft ||
+        ''
+      );
+
       setNotice('Investigation completed.');
     } catch (err) {
       setError(err.message || 'Investigation failed.');
@@ -215,6 +227,8 @@ function Investigation() {
 
   // Generate response draft
   async function generateDraft() {
+    console.log('REPORT BEFORE DRAFT:', report);
+    
     if (!report?.id) return;
 
     setActionLoading(true);
@@ -265,7 +279,7 @@ function Investigation() {
 
       setDetail((previous) => ({
         ...previous,
-        report: result,
+        report: result?.report || result,
       }));
 
       setNotice(
@@ -726,56 +740,7 @@ function Investigation() {
         )}
       </section>
 
-      {/* Add merchant evidence */}
-<section className="investigation-card">
-  <div className="section-heading">
-    <div>
-      <span className="eyebrow">MERCHANT INPUT</span>
-      <h2>Add evidence</h2>
-    </div>
-  </div>
-
-  <form className="evidence-form" onSubmit={handleAddEvidence}>
-    <label htmlFor="evidence-type">Evidence type</label>
-    <select
-      id="evidence-type"
-      value={evidenceType}
-      onChange={(event) => setEvidenceType(event.target.value)}
-    >
-      <option value="customer_communication">Customer communication</option>
-      <option value="delivery_confirmation">Delivery confirmation</option>
-      <option value="carrier">Carrier</option>
-      <option value="tracking_number">Tracking number</option>
-      <option value="product_photos">Product photos</option>
-      <option value="return_policy">Return policy</option>
-      <option value="previous_orders">Previous orders</option>
-      <option value="item_description">Item description</option>
-      <option value="other">Other</option>
-    </select>
-
-    <label htmlFor="evidence-value">Evidence details</label>
-    <textarea
-      id="evidence-value"
-      value={evidenceValue}
-      onChange={(event) => setEvidenceValue(event.target.value)}
-      placeholder="Enter verified evidence details..."
-      rows={4}
-    />
-
-    <button
-      type="submit"
-      className="primary-button"
-      disabled={actionLoading || !evidenceValue.trim()}
-    >
-      {actionLoading ? 'Adding...' : 'Add evidence'}
-    </button>
-  </form>
-
-  <p className="editor-note">
-    Evidence is stored in ChargeGuard for review. It is not automatically
-    submitted to PayPal.
-  </p>
-</section>
+      
 
       {/* Merchant response */}
       <section className="investigation-card">
