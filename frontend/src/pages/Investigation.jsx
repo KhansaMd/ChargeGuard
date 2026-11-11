@@ -18,10 +18,26 @@ const demoDetail = {
   },
   evidence_check: {
     checklist: [
-      { type: 'Order confirmation', status: 'available', evidence_id: 'EV-001' },
-      { type: 'Payment record', status: 'available', evidence_id: 'EV-002' },
-      { type: 'Shipping confirmation', status: 'missing', evidence_id: null },
-      { type: 'Delivery confirmation', status: 'missing', evidence_id: null },
+      {
+        type: 'Order confirmation',
+        status: 'available',
+        evidence_id: 'EV-001',
+      },
+      {
+        type: 'Payment record',
+        status: 'available',
+        evidence_id: 'EV-002',
+      },
+      {
+        type: 'Shipping confirmation',
+        status: 'missing',
+        evidence_id: null,
+      },
+      {
+        type: 'Delivery confirmation',
+        status: 'missing',
+        evidence_id: null,
+      },
     ],
     contradictions: [],
     evidence: [
@@ -59,7 +75,12 @@ function formatDate(value) {
 function Investigation() {
   const { id } = useParams();
 
+  // Component state
   const [detail, setDetail] = useState(null);
+  const [evidenceType, setEvidenceType] = useState(
+    'customer_communication'
+  );
+  const [evidenceValue, setEvidenceValue] = useState('');
   const [demoMode, setDemoMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -68,6 +89,8 @@ function Investigation() {
   const [draft, setDraft] = useState('');
   const [selectedFinding, setSelectedFinding] = useState(null);
 
+
+  // Data derived from the dispute
   const dispute = detail?.dispute;
   const evidenceCheck = detail?.evidence_check || {};
   const report = detail?.report;
@@ -113,7 +136,9 @@ function Investigation() {
         setDemoMode(true);
         setDraft('');
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     }
 
@@ -154,6 +179,40 @@ function Investigation() {
     }
   }
 
+  // Add merchant evidence
+  async function handleAddEvidence() {
+    if (!evidenceValue.trim()) {
+      setError('Please enter an evidence description.');
+      return;
+    }
+
+    if (demoMode) {
+      setNotice('Evidence cannot be added while using demo data.');
+      return;
+    }
+
+    setActionLoading(true);
+    setError('');
+    setNotice('');
+
+    try {
+      await api.addEvidence(id, {
+        type: evidenceType,
+        value: evidenceValue.trim(),
+      });
+
+      const refreshed = await api.getDispute(id);
+
+      setDetail(refreshed);
+      setEvidenceValue('');
+      setNotice('Evidence added successfully.');
+    } catch (err) {
+      setError(err.message || 'Could not add evidence.');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   // Generate response draft
   async function generateDraft() {
     if (!report?.id) return;
@@ -181,7 +240,9 @@ function Investigation() {
 
       setNotice('Response draft generated.');
     } catch (err) {
-      setError(err.message || 'Could not generate the response draft.');
+      setError(
+        err.message || 'Could not generate the response draft.'
+      );
     } finally {
       setActionLoading(false);
     }
@@ -209,7 +270,7 @@ function Investigation() {
 
       setNotice(
         result?.approved
-          ? 'Report approved.'
+          ? 'Report approved successfully.'
           : 'Approval request sent. Check the backend response.'
       );
     } catch (err) {
@@ -248,11 +309,44 @@ function Investigation() {
     }
   }
 
+
+    // Add merchant evidence
+  async function handleAddEvidence(event) {
+    event.preventDefault();
+
+    if (!evidenceValue.trim()) {
+      setError('Please enter evidence details.');
+      return;
+    }
+
+    setActionLoading(true);
+    setError('');
+    setNotice('');
+
+    try {
+      await api.addEvidence(id, {
+        type: evidenceType,
+        value: evidenceValue.trim(),
+      });
+
+      const refreshed = await api.getDispute(id);
+      setDetail(refreshed);
+      setEvidenceValue('');
+      setNotice('Evidence added successfully.');
+    } catch (err) {
+      setError(err.message || 'Could not add evidence.');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   // Loading state
   if (loading) {
     return (
       <main className="main-content">
-        <p className="investigation-message">Loading dispute...</p>
+        <p className="investigation-message">
+          Loading dispute...
+        </p>
       </main>
     );
   }
@@ -264,6 +358,7 @@ function Investigation() {
         <Link to="/disputes" className="back-link">
           ← Back to disputes
         </Link>
+
         <p className="investigation-error">{error}</p>
       </main>
     );
@@ -298,11 +393,15 @@ function Investigation() {
       </div>
 
       {error && (
-        <div className="investigation-alert error">{error}</div>
+        <div className="investigation-alert error">
+          {error}
+        </div>
       )}
 
       {notice && (
-        <div className="investigation-alert notice">{notice}</div>
+        <div className="investigation-alert notice">
+          {notice}
+        </div>
       )}
 
       {/* Dispute overview */}
@@ -390,7 +489,9 @@ function Investigation() {
                 }`}
                 onClick={() => setSelectedFinding(index)}
               >
-                <span className="finding-number">{index + 1}</span>
+                <span className="finding-number">
+                  {index + 1}
+                </span>
 
                 <span className="finding-content">
                   <strong>{finding.statement}</strong>
@@ -458,11 +559,15 @@ function Investigation() {
                   <strong>{item.type}</strong>
 
                   {item.evidence_id && (
-                    <small>Evidence ID: {item.evidence_id}</small>
+                    <small>
+                      Evidence ID: {item.evidence_id}
+                    </small>
                   )}
                 </div>
 
-                <span className={`evidence-status ${item.status}`}>
+                <span
+                  className={`evidence-status ${item.status}`}
+                >
                   {item.status}
                 </span>
               </div>
@@ -480,7 +585,9 @@ function Investigation() {
 
             {contradictions.map((item, index) => (
               <div key={index}>
-                <strong>{item.issue || item.statement}</strong>
+                <strong>
+                  {item.issue || item.statement}
+                </strong>
 
                 {item.evidence_ids?.length > 0 && (
                   <small>
@@ -491,6 +598,74 @@ function Investigation() {
             ))}
           </div>
         )}
+      </section>
+
+      {/* Add evidence */}
+      <section className="investigation-card">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">MERCHANT INPUT</span>
+            <h2>Add evidence</h2>
+          </div>
+        </div>
+
+        <div className="evidence-form">
+          <label htmlFor="evidence-type">
+            Evidence type
+          </label>
+
+          <select
+            id="evidence-type"
+            value={evidenceType}
+            onChange={(event) => setEvidenceType(event.target.value)}
+            disabled={actionLoading || demoMode}
+          >
+            <option value="customer_communication">
+              Customer communication
+            </option>
+            <option value="delivery_confirmation">
+              Delivery confirmation
+            </option>
+            <option value="carrier">Carrier</option>
+            <option value="tracking_number">Tracking number</option>
+            <option value="product_photos">Product photos</option>
+            <option value="return_policy">Return policy</option>
+            <option value="previous_orders">Previous orders</option>
+            <option value="item_description">Item description</option>
+            <option value="other">Other</option>
+          </select>
+
+          <label htmlFor="evidence-value">
+            Evidence details
+          </label>
+
+          <textarea
+            id="evidence-value"
+            value={evidenceValue}
+            onChange={(event) => setEvidenceValue(event.target.value)}
+            placeholder="Enter details from a genuine, verifiable merchant record..."
+            rows={4}
+            disabled={actionLoading || demoMode}
+          />
+
+          <button
+            className="primary-button"
+            onClick={handleAddEvidence}
+            disabled={
+              actionLoading ||
+              demoMode ||
+              !evidenceValue.trim()
+            }
+          >
+            {actionLoading ? 'Adding...' : 'Add evidence'}
+          </button>
+
+          <p className="editor-note">
+            Evidence is stored in ChargeGuard for review. It is not
+            automatically submitted to PayPal. Only add genuine,
+            verifiable merchant records.
+          </p>
+        </div>
       </section>
 
       {/* Source records */}
@@ -550,6 +725,57 @@ function Investigation() {
           </div>
         )}
       </section>
+
+      {/* Add merchant evidence */}
+<section className="investigation-card">
+  <div className="section-heading">
+    <div>
+      <span className="eyebrow">MERCHANT INPUT</span>
+      <h2>Add evidence</h2>
+    </div>
+  </div>
+
+  <form className="evidence-form" onSubmit={handleAddEvidence}>
+    <label htmlFor="evidence-type">Evidence type</label>
+    <select
+      id="evidence-type"
+      value={evidenceType}
+      onChange={(event) => setEvidenceType(event.target.value)}
+    >
+      <option value="customer_communication">Customer communication</option>
+      <option value="delivery_confirmation">Delivery confirmation</option>
+      <option value="carrier">Carrier</option>
+      <option value="tracking_number">Tracking number</option>
+      <option value="product_photos">Product photos</option>
+      <option value="return_policy">Return policy</option>
+      <option value="previous_orders">Previous orders</option>
+      <option value="item_description">Item description</option>
+      <option value="other">Other</option>
+    </select>
+
+    <label htmlFor="evidence-value">Evidence details</label>
+    <textarea
+      id="evidence-value"
+      value={evidenceValue}
+      onChange={(event) => setEvidenceValue(event.target.value)}
+      placeholder="Enter verified evidence details..."
+      rows={4}
+    />
+
+    <button
+      type="submit"
+      className="primary-button"
+      disabled={actionLoading || !evidenceValue.trim()}
+    >
+      {actionLoading ? 'Adding...' : 'Add evidence'}
+    </button>
+  </form>
+
+  <p className="editor-note">
+    Evidence is stored in ChargeGuard for review. It is not automatically
+    submitted to PayPal.
+  </p>
+</section>
 
       {/* Merchant response */}
       <section className="investigation-card">

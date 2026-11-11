@@ -159,15 +159,15 @@ function AuditLog() {
               <tbody>
                 {filteredLogs.map((log, index) => (
                   <tr key={log.id || index}>
-                    <td className="audit-id">{log.id || '—'}</td>
-                    <td>{log.dispute_id || '—'}</td>
+                    <td className="audit-id">{log.id || 'â€”'}</td>
+                    <td>{log.dispute_id || 'â€”'}</td>
                     <td>
                       <span className="audit-action">
                         {log.action || 'Activity recorded'}
                       </span>
                     </td>
-                    <td className="audit-detail">{log.detail || '—'}</td>
-                    <td>{log.created_at || '—'}</td>
+                    <td className="audit-detail">{typeof log.detail === "object" && log.detail !== null ? JSON.stringify(log.detail) : log.detail || "—"}</td>
+                    <td>{log.created_at || 'â€”'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -187,3 +187,4 @@ function AuditLog() {
 }
 
 export default AuditLog;
+
