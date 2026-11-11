@@ -4,6 +4,60 @@ import { Link, useParams } from 'react-router-dom';
 import { api } from '../services/api';
 import './Investigation.css';
 
+const demoDetail = {
+  dispute: {
+    id: 'DP-10241',
+    transaction_id: 'TXN-58392',
+    reason: 'Item not received',
+    status: 'Under review',
+    stage: 'Evidence review',
+    amount: 149,
+    currency: 'USD',
+    due_date: '2026-11-12',
+    created_at: '2026-11-04',
+  },
+  evidence_check: {
+    checklist: [
+      {
+        type: 'Order confirmation',
+        status: 'available',
+        evidence_id: 'EV-001',
+      },
+      {
+        type: 'Payment record',
+        status: 'available',
+        evidence_id: 'EV-002',
+      },
+      {
+        type: 'Shipping confirmation',
+        status: 'missing',
+        evidence_id: null,
+      },
+      {
+        type: 'Delivery confirmation',
+        status: 'missing',
+        evidence_id: null,
+      },
+    ],
+    contradictions: [],
+    evidence: [
+      {
+        id: 'EV-001',
+        type: 'Order confirmation',
+        source: 'Merchant order record',
+        value: 'Order #ORD-58392 — $149.00 USD',
+      },
+      {
+        id: 'EV-002',
+        type: 'Payment record',
+        source: 'Sandbox transaction',
+        value: 'Payment TXN-58392 — Completed',
+      },
+    ],
+  },
+  report: null,
+};
+
 function formatDate(value) {
   if (!value) return 'Not provided';
 
@@ -21,7 +75,13 @@ function formatDate(value) {
 function Investigation() {
   const { id } = useParams();
 
+  // Component state
   const [detail, setDetail] = useState(null);
+  const [evidenceType, setEvidenceType] = useState(
+    'customer_communication'
+  );
+  const [evidenceValue, setEvidenceValue] = useState('');
+  const [demoMode, setDemoMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
@@ -29,6 +89,8 @@ function Investigation() {
   const [draft, setDraft] = useState('');
   const [selectedFinding, setSelectedFinding] = useState(null);
 
+
+  // Data derived from the dispute
   const dispute = detail?.dispute;
   const evidenceCheck = detail?.evidence_check || {};
   const report = detail?.report;
@@ -58,17 +120,25 @@ function Investigation() {
         if (!active) return;
 
         setDetail(result);
+        setDemoMode(false);
         setDraft(result?.report?.data?.response_draft || '');
-      } catch (err) {
+      } catch {
         if (!active) return;
 
-        setDetail(null);
-        setError(
-          err.message ||
-          'Unable to load dispute. Check your backend connection.'
-        );
+        setDetail({
+          ...demoDetail,
+          dispute: {
+            ...demoDetail.dispute,
+            id,
+          },
+        });
+
+        setDemoMode(true);
+        setDraft('');
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     }
 
@@ -81,28 +151,63 @@ function Investigation() {
 
   // Run AI investigation
   async function runInvestigation() {
+    if (demoMode) {
+      setNotice(
+        'Demo mode: connect the backend to run a real AI investigation.'
+      );
+      return;
+    }
+
     setActionLoading(true);
     setError('');
     setNotice('');
 
     try {
-      // Run the AI investigation.
-      await api.investigate(id);
+      const result = await api.investigate(id);
 
-      // Fetch the saved report from the backend.
-      // The investigation endpoint may return an empty object,
-      // so we retrieve the updated dispute separately.
+      setDetail((previous) => ({
+        ...previous,
+        report: result,
+      }));
+
+      setDraft(result?.data?.response_draft || '');
+      setNotice('Investigation completed.');
+    } catch (err) {
+      setError(err.message || 'Investigation failed.');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  // Add merchant evidence
+  async function handleAddEvidence() {
+    if (!evidenceValue.trim()) {
+      setError('Please enter an evidence description.');
+      return;
+    }
+
+    if (demoMode) {
+      setNotice('Evidence cannot be added while using demo data.');
+      return;
+    }
+
+    setActionLoading(true);
+    setError('');
+    setNotice('');
+
+    try {
+      await api.addEvidence(id, {
+        type: evidenceType,
+        value: evidenceValue.trim(),
+      });
+
       const refreshed = await api.getDispute(id);
 
       setDetail(refreshed);
-      setDraft(
-        refreshed?.report?.data?.response_draft || ''
-      );
-      setSelectedFinding(null);
-
-      setNotice('Investigation completed successfully.');
+      setEvidenceValue('');
+      setNotice('Evidence added successfully.');
     } catch (err) {
-      setError(err.message || 'Investigation failed.');
+      setError(err.message || 'Could not add evidence.');
     } finally {
       setActionLoading(false);
     }
@@ -175,6 +280,66 @@ function Investigation() {
     }
   }
 
+  // Submit approved evidence
+  async function submitEvidence() {
+    if (!report?.approved) return;
+
+    const confirmed = window.confirm(
+      'Submit the approved evidence to PayPal?'
+    );
+
+    if (!confirmed) return;
+
+    setActionLoading(true);
+    setError('');
+    setNotice('');
+
+    try {
+      const result = await api.submitEvidence(id);
+
+      setNotice(
+        result?.submitted
+          ? 'Evidence submission completed.'
+          : 'The backend did not confirm submission.'
+      );
+    } catch (err) {
+      setError(err.message || 'Evidence submission failed.');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+
+    // Add merchant evidence
+  async function handleAddEvidence(event) {
+    event.preventDefault();
+
+    if (!evidenceValue.trim()) {
+      setError('Please enter evidence details.');
+      return;
+    }
+
+    setActionLoading(true);
+    setError('');
+    setNotice('');
+
+    try {
+      await api.addEvidence(id, {
+        type: evidenceType,
+        value: evidenceValue.trim(),
+      });
+
+      const refreshed = await api.getDispute(id);
+      setDetail(refreshed);
+      setEvidenceValue('');
+      setNotice('Evidence added successfully.');
+    } catch (err) {
+      setError(err.message || 'Could not add evidence.');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   // Loading state
   if (loading) {
     return (
@@ -222,8 +387,8 @@ function Investigation() {
           </p>
         </div>
 
-        <span className="data-mode live">
-          Backend connected
+        <span className={`data-mode ${demoMode ? 'demo' : 'live'}`}>
+          {demoMode ? 'Demo data' : 'Backend connected'}
         </span>
       </div>
 
@@ -255,9 +420,7 @@ function Investigation() {
         <div className="overview-grid">
           <div>
             <span>Dispute reason</span>
-            <strong>
-              {dispute.reason || 'Not provided'}
-            </strong>
+            <strong>{dispute.reason || 'Not provided'}</strong>
           </div>
 
           <div>
@@ -276,16 +439,12 @@ function Investigation() {
 
           <div>
             <span>Current stage</span>
-            <strong>
-              {dispute.stage || 'Not provided'}
-            </strong>
+            <strong>{dispute.stage || 'Not provided'}</strong>
           </div>
 
           <div>
             <span>Date created</span>
-            <strong>
-              {formatDate(dispute.created_at)}
-            </strong>
+            <strong>{formatDate(dispute.created_at)}</strong>
           </div>
 
           <div>
@@ -308,11 +467,17 @@ function Investigation() {
           <button
             className="primary-button"
             onClick={runInvestigation}
-            disabled={actionLoading}
+            disabled={actionLoading || demoMode}
           >
             {actionLoading ? 'Working...' : 'Run investigation'}
           </button>
         </div>
+
+        {demoMode && (
+          <p className="demo-note">
+            Demo mode: AI analysis becomes available when the backend is connected.
+          </p>
+        )}
 
         {findings.length > 0 ? (
           <div className="findings-list">
@@ -347,11 +512,9 @@ function Investigation() {
         ) : (
           <div className="empty-state">
             <span className="empty-icon">✦</span>
-
             <strong>No investigation findings yet</strong>
-
             <p>
-              Run an investigation to generate AI findings.
+              Run an investigation when the backend is connected.
             </p>
           </div>
         )}
@@ -437,6 +600,74 @@ function Investigation() {
         )}
       </section>
 
+      {/* Add evidence */}
+      <section className="investigation-card">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">MERCHANT INPUT</span>
+            <h2>Add evidence</h2>
+          </div>
+        </div>
+
+        <div className="evidence-form">
+          <label htmlFor="evidence-type">
+            Evidence type
+          </label>
+
+          <select
+            id="evidence-type"
+            value={evidenceType}
+            onChange={(event) => setEvidenceType(event.target.value)}
+            disabled={actionLoading || demoMode}
+          >
+            <option value="customer_communication">
+              Customer communication
+            </option>
+            <option value="delivery_confirmation">
+              Delivery confirmation
+            </option>
+            <option value="carrier">Carrier</option>
+            <option value="tracking_number">Tracking number</option>
+            <option value="product_photos">Product photos</option>
+            <option value="return_policy">Return policy</option>
+            <option value="previous_orders">Previous orders</option>
+            <option value="item_description">Item description</option>
+            <option value="other">Other</option>
+          </select>
+
+          <label htmlFor="evidence-value">
+            Evidence details
+          </label>
+
+          <textarea
+            id="evidence-value"
+            value={evidenceValue}
+            onChange={(event) => setEvidenceValue(event.target.value)}
+            placeholder="Enter details from a genuine, verifiable merchant record..."
+            rows={4}
+            disabled={actionLoading || demoMode}
+          />
+
+          <button
+            className="primary-button"
+            onClick={handleAddEvidence}
+            disabled={
+              actionLoading ||
+              demoMode ||
+              !evidenceValue.trim()
+            }
+          >
+            {actionLoading ? 'Adding...' : 'Add evidence'}
+          </button>
+
+          <p className="editor-note">
+            Evidence is stored in ChargeGuard for review. It is not
+            automatically submitted to PayPal. Only add genuine,
+            verifiable merchant records.
+          </p>
+        </div>
+      </section>
+
       {/* Source records */}
       <section className="investigation-card">
         <div className="section-heading">
@@ -453,13 +684,6 @@ function Investigation() {
                 selectedFinding !== null &&
                 findings[selectedFinding]?.source_ids?.includes(item.id);
 
-              const checklistItem = checklist.find(
-                (entry) => entry.evidence_id === item.id
-              );
-
-              const evidenceStatus =
-                checklistItem?.status || 'unclassified';
-
               return (
                 <div
                   key={item.id}
@@ -469,15 +693,8 @@ function Investigation() {
                 >
                   <div className="evidence-item-heading">
                     <strong>{item.type}</strong>
-
-                    <span
-                      className={`evidence-status ${evidenceStatus}`}
-                    >
-                      {evidenceStatus}
-                    </span>
+                    <span>{item.id}</span>
                   </div>
-
-                  <small>Evidence ID: {item.id}</small>
 
                   <p>{item.value || 'No value provided'}</p>
 
@@ -509,6 +726,57 @@ function Investigation() {
         )}
       </section>
 
+      {/* Add merchant evidence */}
+<section className="investigation-card">
+  <div className="section-heading">
+    <div>
+      <span className="eyebrow">MERCHANT INPUT</span>
+      <h2>Add evidence</h2>
+    </div>
+  </div>
+
+  <form className="evidence-form" onSubmit={handleAddEvidence}>
+    <label htmlFor="evidence-type">Evidence type</label>
+    <select
+      id="evidence-type"
+      value={evidenceType}
+      onChange={(event) => setEvidenceType(event.target.value)}
+    >
+      <option value="customer_communication">Customer communication</option>
+      <option value="delivery_confirmation">Delivery confirmation</option>
+      <option value="carrier">Carrier</option>
+      <option value="tracking_number">Tracking number</option>
+      <option value="product_photos">Product photos</option>
+      <option value="return_policy">Return policy</option>
+      <option value="previous_orders">Previous orders</option>
+      <option value="item_description">Item description</option>
+      <option value="other">Other</option>
+    </select>
+
+    <label htmlFor="evidence-value">Evidence details</label>
+    <textarea
+      id="evidence-value"
+      value={evidenceValue}
+      onChange={(event) => setEvidenceValue(event.target.value)}
+      placeholder="Enter verified evidence details..."
+      rows={4}
+    />
+
+    <button
+      type="submit"
+      className="primary-button"
+      disabled={actionLoading || !evidenceValue.trim()}
+    >
+      {actionLoading ? 'Adding...' : 'Add evidence'}
+    </button>
+  </form>
+
+  <p className="editor-note">
+    Evidence is stored in ChargeGuard for review. It is not automatically
+    submitted to PayPal.
+  </p>
+</section>
+
       {/* Merchant response */}
       <section className="investigation-card">
         <div className="section-heading">
@@ -520,7 +788,7 @@ function Investigation() {
           <button
             className="secondary-button"
             onClick={generateDraft}
-            disabled={actionLoading || !report?.id}
+            disabled={actionLoading || !report?.id || demoMode}
           >
             Generate draft
           </button>
@@ -555,6 +823,7 @@ function Investigation() {
             onClick={approveReport}
             disabled={
               actionLoading ||
+              demoMode ||
               !report?.id ||
               !draft.trim() ||
               report?.approved
@@ -565,14 +834,17 @@ function Investigation() {
 
           <button
             className="submit-button"
-            disabled={true}
-            title="PayPal submission is disabled during development"
+            onClick={submitEvidence}
+            disabled={
+              actionLoading ||
+              demoMode ||
+              !report?.approved
+            }
           >
-            Submission disabled during testing
+            Submit evidence
           </button>
         </div>
       </section>
-
     </main>
   );
 }
