@@ -47,7 +47,7 @@ const sampleTransactions = [
 ];
 
 function formatDate(value) {
-  if (!value) return '—';
+  if (!value) return 'â€”';
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -188,13 +188,13 @@ function Transactions() {
                 {filteredTransactions.map((transaction) => (
                   <tr key={transaction.id}>
                     <td className="transaction-id">{transaction.id}</td>
-                    <td>{transaction.order_id || '—'}</td>
+                    <td>{transaction.order_id || 'â€”'}</td>
                     <td className="transaction-amount">
                       {transaction.currency || 'USD'}{' '}
                       {Number(transaction.amount || 0).toFixed(2)}
                     </td>
-                    <td>{transaction.payer_email || '—'}</td>
-                    <td>{transaction.shipping_address || '—'}</td>
+                    <td>{transaction.payer_email || 'â€”'}</td>
+                    <td>{typeof transaction.shipping_address === "object" && transaction.shipping_address !== null ? Object.values(transaction.shipping_address).filter(Boolean).join(", ") : transaction.shipping_address || "—"}</td>
                     <td>{formatDate(transaction.created_at)}</td>
                     <td>
                       <span className={`transaction-type ${
@@ -219,3 +219,4 @@ function Transactions() {
 }
 
 export default Transactions;
+
