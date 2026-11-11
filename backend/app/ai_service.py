@@ -169,19 +169,49 @@ REPORT_TOOL = {
 
 def verify(data: dict, valid_ids: set[str]) -> tuple[dict, bool]:
     """
-    Verify Claude's findings reference real evidence IDs
-    and collect valid evidence IDs at report level.
+    Verify Claude's findings reference real evidence IDs.
+    Findings without evidence references remain unverified.
     """
 
     findings = data.get("findings", [])
 
-    # A report must contain at least one finding to be verified.
-    all_verified = bool(findings)
-    invalid_ids = []
+    if not isinstance(findings, list):
+        findings = []
+
+    # Normalize findings so strings cannot crash verification.
+    normalized_findings = []
 
     for finding in findings:
+        if isinstance(finding, str):
+            finding = {
+                "statement": finding,
+                "source_ids": [],
+            }
+
+        elif not isinstance(finding, dict):
+            continue
 
         source_ids = finding.get("source_ids", [])
+
+        if not isinstance(source_ids, list):
+            source_ids = []
+
+        source_ids = [
+            evidence_id
+            for evidence_id in source_ids
+            if isinstance(evidence_id, str)
+        ]
+
+        finding["source_ids"] = source_ids
+        normalized_findings.append(finding)
+
+    data["findings"] = normalized_findings
+
+    all_verified = bool(normalized_findings)
+    invalid_ids = []
+
+    for finding in normalized_findings:
+        source_ids = finding["source_ids"]
 
         valid_sources = [
             evidence_id
@@ -205,8 +235,16 @@ def verify(data: dict, valid_ids: set[str]) -> tuple[dict, bool]:
 
         invalid_ids.extend(invalid_sources)
 
-    # Verify the report's original overall source IDs.
     report_source_ids = data.get("source_ids", [])
+
+    if not isinstance(report_source_ids, list):
+        report_source_ids = []
+
+    report_source_ids = [
+        evidence_id
+        for evidence_id in report_source_ids
+        if isinstance(evidence_id, str)
+    ]
 
     invalid_report_ids = [
         evidence_id
@@ -216,26 +254,22 @@ def verify(data: dict, valid_ids: set[str]) -> tuple[dict, bool]:
 
     invalid_ids.extend(invalid_report_ids)
 
-    # Collect evidence IDs from individual findings.
     finding_source_ids = [
         evidence_id
-        for finding in findings
-        for evidence_id in finding.get("source_ids", [])
+        for finding in normalized_findings
+        for evidence_id in finding["source_ids"]
     ]
 
-    # Combine report and finding IDs, removing duplicates.
     combined_source_ids = list(dict.fromkeys(
         report_source_ids + finding_source_ids
     ))
 
-    # Store only valid evidence IDs at report level.
     data["source_ids"] = [
         evidence_id
         for evidence_id in combined_source_ids
         if evidence_id in valid_ids
     ]
 
-    # Keep a record of invalid evidence references.
     data["invalid_source_ids"] = list(set(invalid_ids))
 
     if invalid_ids:

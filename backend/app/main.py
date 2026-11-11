@@ -168,7 +168,16 @@ def investigate(
 ):
     ai = feature("ai_service", "investigate")
     dispute_or_404(session, dispute_id)
-    return ai.investigate(session, dispute_id).model_dump()
+    report = ai.investigate(session, dispute_id)
+    
+    return {
+        "id": report.id,
+        "dispute_id": report.dispute_id,
+        "data": report.data,
+        "verified": report.verified,
+        "approved": report.approved,
+        "created_at": report.created_at.isoformat(),
+        }
 
 
 @app.post("/api/disputes/{dispute_id}/draft")
