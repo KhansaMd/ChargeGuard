@@ -7,8 +7,7 @@ ChargeGuard pulls a merchant's PayPal disputes, gathers the evidence behind each
 Built for the **PayPal AI Hackathon 2026**.
 
 - **Demo video:** _add YouTube link_
-- **Live demo:** _add hosted URL_
-- **API docs (live):** _add backend URL_ `/docs`
+- **Live demo: [ChargeGuard live demo](https://charge-guard-jet.vercel.app/)
 
 ---
 
