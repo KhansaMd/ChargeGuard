@@ -1,10 +1,10 @@
+
 import { Link } from 'react-router-dom'
 import '../App.css'
 
 function App() {
   return (
     <div className="app-container">
-
 
       {/* MAIN CONTENT */}
       <main className="main-content">
@@ -35,9 +35,9 @@ function App() {
             <p>Here's what's happening with your business today.</p>
           </div>
 
-          <a href="#" className="primary-button">
+          <Link to="/disputes" className="primary-button">
             + View Disputes
-          </a>
+          </Link>
         </section>
 
         {/* STATISTICS */}
@@ -91,8 +91,8 @@ function App() {
             </div>
 
             <Link to="/disputes" className="text-link">
-  View all disputes →
-     </Link>
+              View all disputes →
+            </Link>
           </div>
 
           <div className="table-wrapper">
