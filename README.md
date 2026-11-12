@@ -46,7 +46,7 @@ The backend never attempts an action that PayPal hasn't listed as allowed for th
 - **Anthropic Claude** (`claude-sonnet-5-5` for the demo, `claude-haiku-5-5` during development, set with `AI_MODEL`): reads the validated evidence and returns the investigation report and response draft through a forced structured tool call. The backend verifies every cited evidence ID before the report is shown.
 - **PayPal Developer Platform (Sandbox)**: Orders v2, Payments, Disputes API.
 - **AG Grid**: dispute and transaction tables in the dashboard.
-- **Render**: hosting.
+- **Render&Vercel**: hosting.
 - **Postman**: testing PayPal API calls during development.
 
 ## Key features
