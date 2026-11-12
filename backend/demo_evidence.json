@@ -1,6 +1,56 @@
 {
-  "PP-R-NHW-10197039": [
-    {"type": "carrier", "value": "UPS"},
-    {"type": "delivery_confirmation", "value": "Demo merchant record: delivered and left at front door"}
-  ]
+  "DEMO-CG-001": {
+    "label": "Complete evidence scenario",
+    "transaction_id": "DEMO-TXN-001",
+    "reason": "MERCHANDISE_OR_SERVICE_NOT_RECEIVED",
+    "status": "Under review",
+    "stage": "Complete evidence (DEMO)",
+    "amount": "149.00",
+    "currency": "USD",
+    "due_date": "2026-11-17",
+    "created_at": "2026-11-10T10:00:00Z",
+    "evidence": [
+      {"type": "payment_record", "value": "149.00 USD captured 2026-11-10T10:00:00Z, status COMPLETED"},
+      {"type": "shipping_address", "value": "100 Market Street, Riyadh, 11564, SA"},
+      {"type": "carrier", "value": "UPS"},
+      {"type": "tracking_number", "value": "1Z999AA10123456784"},
+      {"type": "delivery_confirmation", "value": "Carrier delivery scan: delivered to front door on 2026-11-11 at 14:32 UTC"}
+    ]
+  },
+  "DEMO-CG-002": {
+    "label": "Missing evidence scenario",
+    "transaction_id": "DEMO-TXN-002",
+    "reason": "MERCHANDISE_OR_SERVICE_NOT_RECEIVED",
+    "status": "Action needed",
+    "stage": "Missing delivery proof (DEMO)",
+    "amount": "89.50",
+    "currency": "USD",
+    "due_date": "2026-11-18",
+    "created_at": "2026-11-09T11:00:00Z",
+    "evidence": [
+      {"type": "payment_record", "value": "89.50 USD captured 2026-11-09T11:00:00Z, status COMPLETED"},
+      {"type": "shipping_address", "value": "25 King Fahd Road, Riyadh, 12211, SA"},
+      {"type": "carrier", "value": "DHL"},
+      {"type": "tracking_number", "value": "1234567890"}
+    ]
+  },
+  "DEMO-CG-003": {
+    "label": "Conflicting evidence scenario",
+    "transaction_id": "DEMO-TXN-003",
+    "reason": "MERCHANDISE_OR_SERVICE_NOT_RECEIVED",
+    "status": "Under review",
+    "stage": "Conflicting records (DEMO)",
+    "amount": "210.00",
+    "currency": "USD",
+    "due_date": "2026-11-19",
+    "created_at": "2026-11-08T12:00:00Z",
+    "evidence": [
+      {"type": "payment_record", "value": "210.00 USD captured 2026-11-08T12:00:00Z, status COMPLETED"},
+      {"type": "shipping_address", "value": "15 Olaya Street, Riyadh, 12241, SA"},
+      {"type": "carrier", "value": "FedEx"},
+      {"type": "tracking_number", "value": "9876543210"},
+      {"type": "delivery_confirmation", "value": "Carrier scan reports delivered to reception desk on 2026-11-10"},
+      {"type": "customer_communication", "value": "Buyer message: I did not receive the parcel"}
+    ]
+  }
 }

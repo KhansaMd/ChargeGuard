@@ -512,7 +512,7 @@ function Investigation() {
 
                   <small>
                     {finding.verified
-                      ? 'Verified finding'
+                      ? 'Source reference verified'
                       : 'Requires verification'}
 
                     {finding.source_ids?.length

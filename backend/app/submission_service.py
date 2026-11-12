@@ -67,6 +67,12 @@ def _validate_report(session: Session, report: Report) -> None:
     """Validate report verification and evidence references."""
 
     data = report.data or {}
+    dispute = session.get(Dispute, report.dispute_id)
+    if dispute and (dispute.raw or {}).get("is_demo"):
+        raise ValueError(
+            "Demo disputes cannot be approved or submitted to PayPal."
+        )
+
 
     if not report.verified:
         raise ValueError(

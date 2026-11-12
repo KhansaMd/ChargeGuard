@@ -27,12 +27,24 @@ STRICT RULES:
 1. Use only the evidence records provided.
    Never invent facts, dates, tracking numbers, or documents.
 
-2. Every finding must include at least one valid evidence ID
+2. Generate factual findings from the available evidence.
+   Do not return an empty findings array when the evidence
+   contains usable factual records.
+
+   Every finding must include at least one valid evidence ID
    that directly supports it in source_ids.
+
+   Describe what the records actually show, using careful
+   wording such as "The payment record shows" or
+   "The PayPal order lists".
+
+   Never treat demo, sample, test, or placeholder records
+   as genuine proof.
 
    Do not put claims about absent evidence in findings.
    Put all missing or unavailable evidence in
    missing_information instead.
+
 
 3. List all missing information in missing_information.
 
