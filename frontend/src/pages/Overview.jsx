@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import '../App.css'
 
 function App() {
@@ -89,9 +90,9 @@ function App() {
               <p>Monitor and manage your latest PayPal disputes.</p>
             </div>
 
-            <a href="#" className="text-link">
-              View all disputes →
-            </a>
+            <Link to="/disputes" className="text-link">
+  View all disputes →
+     </Link>
           </div>
 
           <div className="table-wrapper">
